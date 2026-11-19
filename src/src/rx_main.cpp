@@ -1790,6 +1790,11 @@ static void updateBindingMode(unsigned long now)
     {
         DBGLN("Power on counter >=5, enter wifi mode");
         config.SetPowerOnCounter(0);
+        // Stop the radio for the commit, as CheckConfigChangePending() does. On ESP8266 the flash erase
+        // disables the cache, and a packet arriving during it crashes the DIO ISR on flash-resident code.
+        // No need to resume RX afterwards, the wifi service ends the radio when it starts
+        LostConnection(false);
+        Radio.SetTxIdleMode(); // LostConnection() leaves the radio receiving in binding mode
         config.Commit();
         setWifiUpdateMode();
     }

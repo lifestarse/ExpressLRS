@@ -240,6 +240,10 @@ typedef struct __attribute__((packed)) {
     uint8_t     sourceSysId;
 } rx_config_t;
 
+// Number of quick power cycles (power removed within 2s of boot) to trigger each action
+#define POWER_ON_COUNT_BINDING  3U
+#define POWER_ON_COUNT_WIFI     5U
+
 class RxConfig
 {
 public:

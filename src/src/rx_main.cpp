@@ -1849,8 +1849,10 @@ static void updateBindingMode(unsigned long now)
 
 #if defined(PLATFORM_ESP32) || defined(PLATFORM_ESP8266)
     // If the power on counter is >=5, enter wifi. Checked before binding so the 5th
-    // power cycle goes straight to wifi. The counter is cleared here so the next boot is normal
-    else if (config.GetPowerOnCounter() >= POWER_ON_COUNT_WIFI && connectionState < MODE_STATES)
+    // power cycle goes straight to wifi. The counter is cleared here so the next boot is normal.
+    // Skipped in Administered binding storage, which exists so power glitches can't change the RX's mode
+    else if (config.GetPowerOnCounter() >= POWER_ON_COUNT_WIFI && connectionState < MODE_STATES
+             && config.GetBindStorage() != BINDSTORAGE_ADMINISTERED)
     {
         DBGLN("Power on counter >=5, enter wifi mode");
         config.SetPowerOnCounter(0);

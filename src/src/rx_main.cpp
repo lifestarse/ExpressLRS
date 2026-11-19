@@ -1548,8 +1548,9 @@ static void setupConfigAndPocCheck()
     config.SetStorageProvider(&eeprom); // Pass pointer to the Config class for access to storage
     config.Load();
 
-    // If bound, track number of plug/unplug cycles to go to binding mode in eeprom
-    if (config.GetIsBound() && config.GetPowerOnCounter() < 3)
+    // If bound, track number of plug/unplug cycles in eeprom:
+    // 3 cycles enters binding mode, 5 cycles enters wifi mode
+    if (config.GetIsBound() && config.GetPowerOnCounter() < POWER_ON_COUNT_WIFI)
     {
         config.SetPowerOnCounter(config.GetPowerOnCounter() + 1);
         config.Commit();
@@ -1783,8 +1784,18 @@ static void updateBindingMode(unsigned long now)
     }
 #endif
 
+    // If the power on counter is >=5, enter wifi. Checked before binding so the 5th
+    // power cycle goes straight to wifi. The counter is cleared here so the next boot is normal
+    else if (config.GetPowerOnCounter() >= POWER_ON_COUNT_WIFI && connectionState < MODE_STATES)
+    {
+        DBGLN("Power on counter >=5, enter wifi mode");
+        config.SetPowerOnCounter(0);
+        config.Commit();
+        setWifiUpdateMode();
+    }
+
     // If the power on counter is >=3, enter binding, the counter will be reset after 2s
-    else if (!InBindingMode && config.GetPowerOnCounter() >= 3)
+    else if (!InBindingMode && config.GetPowerOnCounter() >= POWER_ON_COUNT_BINDING)
     {
         // Never enter wifi if forced to binding mode
         webserverPreventAutoStart = true;
@@ -1842,7 +1853,7 @@ void EnterBindingModeSafely()
     if (connectionState == wifiUpdate || connectionState == bleJoystick)
     {
         // Force 3-plug binding mode
-        config.SetPowerOnCounter(3);
+        config.SetPowerOnCounter(POWER_ON_COUNT_BINDING);
         config.Commit();
         ESP.restart();
         // Unreachable

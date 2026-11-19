@@ -903,6 +903,7 @@ void RxConfig::CheckUpdateFlashedUid(bool skipDescrimCheck)
     m_config.flash_discriminator = firmwareOptions.flash_discriminator;
     // Reset the power on counter because this is following a flash, may have taken a few boots to flash
     m_config.powerOnCounter = 0;
+    m_config.powerOnCounterHi = 0;
     // SetUID should set this but just in case that gets removed, flash_discriminator needs to be saved
     m_modified = EVENT_CONFIG_UID_CHANGED;
 
@@ -1205,9 +1206,10 @@ RxConfig::SetPowerOnCounter(uint8_t powerOnCounter)
         ESP.flashWrite(EMPTY_SECTOR * SPI_FLASH_SEC_SIZE, zeros, std::min((size_t)powerOnCounter, sizeof(zeros)));
     }
 #else
-    if (m_config.powerOnCounter != powerOnCounter)
+    if (GetPowerOnCounter() != powerOnCounter)
     {
-        m_config.powerOnCounter = powerOnCounter;
+        m_config.powerOnCounter = powerOnCounter & 0b11;
+        m_config.powerOnCounterHi = (powerOnCounter >> 2) & 0b1;
         m_modified = EVENT_CONFIG_POWER_COUNT_CHANGED;
     }
 #endif

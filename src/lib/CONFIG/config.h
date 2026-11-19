@@ -258,7 +258,7 @@ typedef struct __attribute__((packed)) {
     uint8_t     serialProtocol:4,
                 failsafeMode:2,
                 antennaGroup:1,
-                unused:1;
+                powerOnCounterHi:1; // 3rd bit of powerOnCounter (was unused, so always 0 in older configs)
     rx_config_pwm_t pwmChannels[PWM_MAX_CHANNELS] __attribute__((aligned(4)));
     uint8_t     teamraceChannel:4,
                 teamracePosition:3,
@@ -266,6 +266,10 @@ typedef struct __attribute__((packed)) {
     uint8_t     targetSysId;
     uint8_t     sourceSysId;
 } rx_config_t;
+
+// Number of quick power cycles (power removed within 2s of boot) to trigger each action
+#define POWER_ON_COUNT_BINDING  3U
+#define POWER_ON_COUNT_WIFI     5U
 
 class RxConfig : public BindphraseConfigurable
 {
@@ -282,7 +286,7 @@ public:
 #if defined(PLATFORM_ESP8266)
     uint8_t  GetPowerOnCounter() const;
 #else
-    uint8_t  GetPowerOnCounter() const { return m_config.powerOnCounter; }
+    uint8_t  GetPowerOnCounter() const { return (m_config.powerOnCounterHi << 2) | m_config.powerOnCounter; }
 #endif
     uint8_t  GetModelId() const { return m_config.modelId; }
     uint8_t GetPower() const { return m_config.power; }
